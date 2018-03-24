@@ -13,14 +13,14 @@
 #include <Arduino.h>
 #include <Hash.h>
 
-
-
 // defines go here
 #define FIRMWAREVERSION "1.0.2"
 #define USERAGENT "ESP8266"
 
-#define DHTPIN 2        // what digital pin we're connected to
-#define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
+#define FANPIN 16
+#define BUTTON 14
+#define DHTPIN 13
+#define DHTTYPE DHT22
 
 #define API_FHEM true
 #define API_UBIDOTS true
@@ -81,12 +81,6 @@
 #define TEMP_CELSIUS 0
 #define TEMP_FAHRENHEIT 1
 #define TEMP_KELVIN 2
-
-// Number of seconds after reset during which a
-// subseqent reset will be considered a double reset.
-//#define DRD_TIMEOUT 1
-// RTC Memory Address for the DoubleResetDetector to use
-//#define DRD_ADDRESS 0
 
 #define WIFIENADDR 1
 #define RTCVALIDFLAG 0xCAFEBABE

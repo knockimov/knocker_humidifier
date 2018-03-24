@@ -8,6 +8,7 @@
 #include <Sender.h>
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
+#include <SSD1306.h>
 
 bool shouldSaveConfig = false;
 
@@ -19,19 +20,24 @@ char my_db[TKIDSIZE] = "KnockHum";
 char my_job[TKIDSIZE] = "KnockHum";
 char my_instance[TKIDSIZE] = "000";
 
-float Humidity = 0, Temperatur = 0;
 char offset[4] = "0";
+char maxHumidity[4] = "0";
 
+float Humidity = 0, Temperatur = 0;
 String my_ssid;
 String my_psk;
 uint8_t my_api;
-uint16_t my_port = 80;
 uint8_t my_tempscale = TEMP_CELSIUS;
+uint16_t my_port = 80;
+uint32_t my_sleeptime = 2 * 60;
 
-unsigned long previousMillis = 0; // will store last time the DHT was updated
-const long interval = 2000;       // interval at which to update DHT-sensor
+unsigned long previousMillisDHT = 0;    // will store last time the DHT was updated
+unsigned long previousMillisUpdate = 0; // will store last time the DHT was updated
+const long intervalDHT = 2000;          // interval at which to update DHT-sensor
+const long intervalUpdate = 120000;     // interval at which to update DHT-sensor
 
 DHT dht(DHTPIN, DHTTYPE, 30);
+SSD1306 display(0x3c, 4, 5);
 
 void formatSpiffs()
 {
@@ -146,8 +152,12 @@ bool startConfiguration()
 
   WiFiManagerParameter custom_name("name", "iSpindel Name", htmlencode(my_name).c_str(),
                                    TKIDSIZE);
-  //WiFiManagerParameter custom_sleep("sleep", "Update Intervall (s)",
-  //                                  String(my_sleeptime).c_str(), 6, TYPE_NUMBER);
+  WiFiManagerParameter custom_sleep("sleep", "Update Intervall (s)",
+                                    String(my_sleeptime).c_str(), 6, TYPE_NUMBER);
+  WiFiManagerParameter custom_offset("offset", "Humidity offset",
+                                    String(offset).c_str(), 6, TYPE_NUMBER);
+  WiFiManagerParameter custom_maxhumidity("maxhumidity", "Maximum humidity",
+                                    String(maxHumidity).c_str(), 6, TYPE_NUMBER);
   WiFiManagerParameter custom_token("token", "Token", htmlencode(my_token).c_str(),
                                     TKIDSIZE);
   WiFiManagerParameter custom_server("server", "Server Address",
@@ -165,6 +175,9 @@ bool startConfiguration()
                                         5, TYPE_HIDDEN, WFM_NO_LABEL);
 
   wifiManager.addParameter(&custom_name);
+  wifiManager.addParameter(&custom_sleep);
+  wifiManager.addParameter(&custom_offset);
+  wifiManager.addParameter(&custom_maxhumidity);
 
   WiFiManagerParameter custom_tempscale_hint("<label for=\"TS\">Unit of temperature</label>");
   wifiManager.addParameter(&custom_tempscale_hint);
@@ -189,15 +202,12 @@ bool startConfiguration()
 
   Serial.println("Opening configuration portal");
 
-  //it starts an access point
-  //and goes into a blocking loop awaiting configuration
   if (!wifiManager.startConfigPortal("HumidorAP", "partagas"))
-  { //Delete these two parameters if you do not want a WiFi password on your configuration access point
+  {
     Serial.println("Not connected to WiFi but continuing anyway.");
   }
   else
   {
-    //if you get here you have connected to the WiFi
     Serial.println("connected...yeey :)");
   }
 
@@ -207,11 +217,14 @@ bool startConfiguration()
   validateInput(custom_db.getValue(), my_db);
   validateInput(custom_job.getValue(), my_job);
   validateInput(custom_instance.getValue(), my_instance);
+  validateInput(custom_url.getValue(), my_url);
 
+  my_sleeptime = String(custom_sleep.getValue()).toInt();
+  offset = String(offset.getValue()).toInt();
+  custom_maxhumidity = String(custom_maxhumidity.getValue()).toInt();
   my_api = String(custom_api.getValue()).toInt();
   my_port = String(custom_port.getValue()).toInt();
   my_tempscale = String(custom_tempscale.getValue()).toInt();
-  validateInput(custom_url.getValue(), my_url);
 
   // save the custom parameters to FS
   if (shouldSaveConfig)
@@ -223,6 +236,86 @@ bool startConfiguration()
     return saveConfig();
   }
   return false;
+}
+
+bool readConfig()
+{
+  CONSOLE(F("mounting FS..."));
+
+  if (SPIFFS.begin())
+  {
+    CONSOLELN(F(" mounted!"));
+    if (SPIFFS.exists(CFGFILE))
+    {
+      // file exists, reading and loading
+      CONSOLELN(F("reading config file"));
+      File configFile = SPIFFS.open(CFGFILE, "r");
+      if (configFile)
+      {
+        CONSOLELN(F("opened config file"));
+        size_t size = configFile.size();
+        // Allocate a buffer to store contents of the file.
+        std::unique_ptr<char[]> buf(new char[size]);
+
+        configFile.readBytes(buf.get(), size);
+        DynamicJsonBuffer jsonBuffer;
+        JsonObject &json = jsonBuffer.parseObject(buf.get());
+
+        if (json.success())
+        {
+          CONSOLELN(F("\nparsed json"));
+
+          if (json.containsKey("Name"))
+            strcpy(my_name, json["Name"]);
+          if (json.containsKey("Token"))
+            strcpy(my_token, json["Token"]);
+          if (json.containsKey("Server"))
+            strcpy(my_server, json["Server"]);
+          if (json.containsKey("Sleep"))
+            my_sleeptime = json["Sleep"];
+          if (json.containsKey("Offset"))
+            offset = json["Offset"];
+          if (json.containsKey("MaxHum"))
+            custom_maxhumidity = json["MaxHum"];
+          if (json.containsKey("API"))
+            my_api = json["API"];
+          if (json.containsKey("Port"))
+            my_port = json["Port"];
+          if (json.containsKey("URL"))
+            strcpy(my_url, json["URL"]);
+          if (json.containsKey("DB"))
+            strcpy(my_db, json["DB"]);
+          if (json.containsKey("Job"))
+            strcpy(my_job, json["Job"]);
+          if (json.containsKey("Instance"))
+            strcpy(my_instance, json["Instance"]);
+          if (json.containsKey("TS"))
+            my_tempscale = json["TS"];
+          if (json.containsKey("SSID"))
+            my_ssid = (const char *)json["SSID"];
+          if (json.containsKey("PSK"))
+            my_psk = (const char *)json["PSK"];
+
+          CONSOLELN(F("parsed config:"));
+#ifdef DEBUG
+          json.printTo(Serial);
+#endif
+          return true;
+        }
+        else
+        {
+          CONSOLELN(F("ERROR: failed to load json config"));
+          return false;
+        }
+      }
+      CONSOLELN(F("ERROR: unable to open config file"));
+    }
+  }
+  else
+  {
+    CONSOLELN(F(" ERROR: failed to mount FS!"));
+    return false;
+  }
 }
 
 bool saveConfig()
@@ -239,6 +332,9 @@ bool saveConfig()
 
   json["Name"] = my_name;
   json["Token"] = my_token;
+  json["Sleep"] = my_sleeptime;
+  json["Offset"] = offset;
+  json["MaxHum"] = maxHumidity;
   json["Server"] = my_server;
   json["API"] = my_api;
   json["Port"] = my_port;
@@ -281,9 +377,7 @@ bool uploadData(uint8_t service)
   {
     sender.add("humidity", Humidity);
     sender.add("temperature", scaleTemperature(Temperatur));
-    //sender.add("battery", Volt);
-    //sender.add("gravity", Gravity);
-    //sender.add("interval", my_sleeptime);
+    sender.add("interval", my_sleeptime);
     sender.add("RSSI", WiFi.RSSI());
     CONSOLELN(F("\ncalling Ubidots"));
     return sender.sendUbidots(my_token, my_name);
@@ -295,9 +389,7 @@ bool uploadData(uint8_t service)
   {
     sender.add("humidity", Humidity);
     sender.add("temperature", scaleTemperature(Temperatur));
-    //sender.add("battery", Volt);
-    //sender.add("gravity", Gravity);
-    //sender.add("interval", my_sleeptime);
+    sender.add("interval", my_sleeptime);
     sender.add("RSSI", WiFi.RSSI());
     CONSOLELN(F("\ncalling InfluxDB"));
     CONSOLELN(String(F("Sending to db: ")) + my_db);
@@ -310,9 +402,7 @@ bool uploadData(uint8_t service)
   {
     sender.add("humidity", Humidity);
     sender.add("temperature", scaleTemperature(Temperatur));
-    //sender.add("battery", Volt);
-    //sender.add("gravity", Gravity);
-    //sender.add("interval", my_sleeptime);
+    sender.add("interval", my_sleeptime);
     sender.add("RSSI", WiFi.RSSI());
     CONSOLELN(F("\ncalling Prometheus Pushgateway"));
     return sender.sendPrometheus(my_server, my_port, my_job, my_instance);
@@ -329,21 +419,17 @@ bool uploadData(uint8_t service)
       sender.add("token", my_token);
     sender.add("humidity", Humidity);
     sender.add("temperature", scaleTemperature(Temperatur));
-    //sender.add("battery", Volt);
-    //sender.add("gravity", Gravity);
-    //sender.add("interval", my_sleeptime);
+    sender.add("interval", my_sleeptime);
     sender.add("RSSI", WiFi.RSSI());
 
     if (service == DTHTTP)
     {
       CONSOLELN(F("\ncalling HTTP"));
-      // return sender.send(my_server, my_url, my_port);
       return sender.sendGenericPost(my_server, my_url, my_port);
     }
     else if (service == DTCraftBeerPi)
     {
       CONSOLELN(F("\ncalling CraftbeerPi"));
-      // return sender.send(my_server, CBP_ENDPOINT, 5000);
       return sender.sendGenericPost(my_server, CBP_ENDPOINT, 5000);
     }
     else if (service == DTiSPINDELde)
@@ -364,8 +450,6 @@ bool uploadData(uint8_t service)
   {
     sender.add("humidity", Humidity);
     sender.add("temperature", scaleTemperature(Temperatur));
-    //sender.add("battery", Volt);
-    //sender.add("gravity", Gravity);
     sender.add("ID", ESP.getChipId());
     CONSOLELN(F("\ncalling FHEM"));
     return sender.sendFHEM(my_server, my_port, my_name);
@@ -376,8 +460,6 @@ bool uploadData(uint8_t service)
   {
     sender.add("T", scaleTemperature(Temperatur));
     sender.add("H", Humidity);
-    //sender.add("U", Volt);
-    //sender.add("G", Gravity);
     CONSOLELN(F("\ncalling TCONTROL"));
     return sender.sendTCONTROL(my_server, my_port);
   }
@@ -386,15 +468,19 @@ bool uploadData(uint8_t service)
 
 void setup()
 {
-  // put your setup code here, to run once:
-
   Serial.begin(115200);
   dht.begin();
+  pinMode(FANPIN, OUTPUT);
+
   Serial.println("\n Starting");
   unsigned long startedAt = millis();
   WiFi.printDiag(Serial); //Remove this line if you do not want to see WiFi password printed
   Serial.print("\nFW ");
   Serial.println(FIRMWAREVERSION);
+
+  bool _validConf = readConfig();
+  if (!_validConf)
+    CONSOLELN(F("\nERROR config corrupted"));
 
   startConfiguration();
 
@@ -417,21 +503,19 @@ void setup()
 
 void loop()
 {
-  unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= interval)
+  unsigned long currentMillisDHT = millis();
+  if (currentMillisDHT - previousMillisDHT >= intervalDHT)
   {
-    previousMillis = currentMillis;
+    previousMillisDHT = currentMillisDHT;
     double OS = atof(offset);
     Temperatur = dht.readTemperature();
     Humidity = dht.readHumidity() + OS;
-    // Check if any reads failed and exit early (to try again).
+
     if (isnan(Humidity) || isnan(Temperatur))
     {
       Serial.println("Failed to read from DHT sensor!");
       return;
     }
-    // Compute heat index in Celsius (isFahreheit = false)
-    float hic = dht.computeHeatIndex(Temperatur, Humidity, false);
 
     Serial.print("Humidity: ");
     Serial.print(Humidity);
@@ -440,11 +524,20 @@ void loop()
     Serial.print("Temperature: ");
     Serial.print(Temperatur);
     Serial.print(" *C ");
-
-    Serial.print("Heat index: ");
-    Serial.print(hic);
-    Serial.print(" *C ");
   }
 
-  //uploadData(my_api);     /* UPLOADING THINGS TO SELECTED API */
+  unsigned long currentMillisUpdate = millis();
+  if (currentMillisUpdate - previousMillisUpdate >= my_sleeptime)
+  {
+    previousMillisUpdate = currentMillisUpdate;
+    uploadData(my_api);     /* UPLOADING THINGS TO SELECTED API */
+  }
+
+  double maxHum = atof(maxHumidity);
+  if (Humidity > 10 && Humidity < maxHum) {
+    digitalWrite(FANPIN, HIGH);
+  } else {
+    digitalWrite(FANPIN, LOW);
+  }
+
 }
