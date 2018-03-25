@@ -19,15 +19,16 @@ char my_url[TKIDSIZE];
 char my_db[TKIDSIZE] = "KnockHum";
 char my_job[TKIDSIZE] = "KnockHum";
 char my_instance[TKIDSIZE] = "000";
-
-char offset[4] = "0";
-char maxHumidity[4] = "0";
+char offset[TKIDSIZE] = "0";
+char maxHumidity[TKIDSIZE] = "0";
 
 float Humidity = 0, Temperatur = 0;
 String my_ssid;
 String my_psk;
 uint8_t my_api;
 uint8_t my_tempscale = TEMP_CELSIUS;
+//uint16_t offset;
+//uint16_t maxHumidity;
 uint16_t my_port = 80;
 uint32_t my_sleeptime = 2 * 60;
 
@@ -219,9 +220,12 @@ bool startConfiguration()
   validateInput(custom_instance.getValue(), my_instance);
   validateInput(custom_url.getValue(), my_url);
 
+  validateInput(custom_url.getValue(), offset);
+  validateInput(custom_url.getValue(), maxHumidity);
+
   my_sleeptime = String(custom_sleep.getValue()).toInt();
-  offset = String(offset.getValue()).toInt();
-  custom_maxhumidity = String(custom_maxhumidity.getValue()).toInt();
+  //offset = String(offset.getValue()).toInt();
+  //maxHumidity = String(maxHumidity.getValue()).toInt();
   my_api = String(custom_api.getValue()).toInt();
   my_port = String(custom_port.getValue()).toInt();
   my_tempscale = String(custom_tempscale.getValue()).toInt();
@@ -274,9 +278,9 @@ bool readConfig()
           if (json.containsKey("Sleep"))
             my_sleeptime = json["Sleep"];
           if (json.containsKey("Offset"))
-            offset = json["Offset"];
+            offset, json["Offset"];
           if (json.containsKey("MaxHum"))
-            custom_maxhumidity = json["MaxHum"];
+            maxHumidity, json["MaxHum"];
           if (json.containsKey("API"))
             my_api = json["API"];
           if (json.containsKey("Port"))
