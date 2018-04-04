@@ -4,7 +4,7 @@
 *eMail=
 *
 *Project=Type4-esp-12F-v132-BIGSIZE--SMD1206
-*Date=06:54:07
+*Date=06:06:01
 *CreatedBy=Fritzing 0.9.3b.04.19.5c895d327c44a3114e5fcc9d8260daf0cbb52806
 *
 *
@@ -13,32 +13,32 @@
 *Rotation in degree (0-360, math. pos.)
 *
 *No;Value;Package;X;Y;Rotation;Side;Name
-1;;jst-3-pth;4.7974;-22.1361;0;Bottom;PWR
-2;;;36.2977;-6.29925;0;Bottom;Via22
-3;;THT;10.7974;-9.26605;0;Bottom;OLED BTN
-4;;;53.0474;-11.7861;0;Bottom;Via9
-5;;tactile-switch-1101ne;74.6974;-15.5361;0;Top;FLASH
-6;;;5.16727;-20.7995;0;Bottom;TXT4
-7;;jst-2-pth-kit;29.0466;-22.4353;0;Bottom;FAN2
-8;;;14.1006;-21.9343;0;Bottom;TXT3
-9;;;14.0474;-13.5361;0;Bottom;Via19
-10;;tactile-switch-1101ne;74.6974;-21.2861;0;Top;RESET
-11;;300 mil [THT];27.332;-10.5361;180;Bottom;DIODE
-12;4.7k;THT;69.7974;-7.09605;-90;Bottom;4.7k?
-13;;jst-3-pth;36.2974;-22.1361;0;Bottom;+DHT-
-14;;TO92 [THT];20.0277;-13.2666;90;Bottom;BC547
-15;;jst-2-pth-kit;22.5466;-22.4353;0;Bottom;FAN1
-16;;;17.0474;-16.5361;0;Bottom;Via24
-17;;;52.1722;-11.1857;0;Top;ESP-12F
-18;;;6.79614;-15.0289;0;Bottom;Via26
-19;4.7k;THT;66.0474;-7.09605;-90;Bottom;4.7k?
-20;;THT;66.0274;-20.7861;90;Bottom;TX/RX
-21;4.7k;THT;73.5474;-7.22605;90;Bottom;4.7k?
-22;;;14.0874;-21.8101;0;Bottom;AMS1117
-23;470;THT;27.4266;-13.0361;0;Bottom;470?
-24;;;14.0474;-8.78606;0;Bottom;Via21
-25;;;36.2977;-14.7724;0;Bottom;Via23
-26;10k;THT;14.7374;-4.78605;180;Bottom;10k?
-27;;;4.36184;-9.03605;90;Bottom;Oled
-28;;;55.5474;-9.78605;0;Bottom;Via8
-29;;;12.7943;-15.0289;0;Bottom;Via25
+1;;;4.36174;-9.0361;90;Bottom;Oled
+2;;tactile-switch-1101ne;74.6972;-15.536;0;Top;FLASH
+3;;;55.5472;-9.78606;0;Bottom;Via8
+4;;jst-3-pth;4.79728;-22.136;0;Bottom;PWR
+5;4.7k;THT;66.0473;-7.0961;-90;Bottom;4.7k?
+6;;300 mil [THT];27.3318;-10.5361;180;Bottom;DIODE
+7;470;THT;27.4264;-13.036;0;Bottom;470?
+8;;TO92 [THT];20.0276;-13.2666;90;Bottom;BC547
+9;;jst-3-pth;36.2972;-22.136;0;Bottom;+DHT-
+10;;;5.16724;-20.7995;0;Bottom;TXT4
+11;;;14.0472;-8.78615;0;Bottom;Via21
+12;;;36.2976;-14.7724;0;Bottom;Via23
+13;4.7k;THT;69.7972;-7.0961;-90;Bottom;4.7k?
+14;;THT;66.0273;-20.7861;90;Bottom;TX/RX
+15;;;36.2976;-6.29921;0;Bottom;Via22
+16;;jst-2-pth-kit;22.5464;-22.4352;0;Bottom;FAN1
+17;;;17.0473;-16.536;0;Bottom;Via24
+18;;;14.0472;-13.5359;0;Bottom;Via19
+19;;jst-2-pth-kit;29.0466;-22.4352;0;Bottom;FAN2
+20;;;14.1004;-21.9343;0;Bottom;TXT3
+21;;;6.7961;-15.0289;0;Bottom;Via26
+22;;;12.7942;-15.0289;0;Bottom;Via25
+23;;;53.0472;-11.7859;0;Bottom;Via9
+24;10k;THT;14.7374;-4.78612;180;Bottom;10k?
+25;;;52.172;-11.1855;0;Top;ESP-12F
+26;;THT;10.7973;-9.26611;0;Bottom;OLED BTN
+27;4.7k;THT;73.5474;-7.22593;90;Bottom;4.7k?
+28;;;14.0871;-21.81;0;Bottom;AMS1117
+29;;tactile-switch-1101ne;74.6972;-21.286;0;Top;RESET
