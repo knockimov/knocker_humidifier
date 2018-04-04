@@ -9,6 +9,7 @@
 #include "Globals.h"
 
 #define UBISERVER "things.ubidots.com"
+#define THINGSERVER "api.thingspeak.com"
 #define CONNTIMEOUT 2000
 
 SenderClass::SenderClass()
@@ -99,6 +100,62 @@ bool SenderClass::sendGenericPost(String server, String url, uint16_t port)
     http.end();
 }
 
+//bool SenderClass::sendThingspeak(String token, String name)
+bool SenderClass::sendThingspeak(String token)
+{
+    _jsonVariant.printTo(Serial);
+
+    if (_client.connect(THINGSERVER, 80))
+    {
+        CONSOLELN(F("Sender: Thingspeak posting"));
+
+        String msg = F("GET /update?key=");
+        msg += token;
+
+        //Build up the data for the Prometheus Pushgateway
+        //A gauge is a metric that represents a single numerical value that can arbitrarily go up and down.
+        for (const auto &kv : _jsonVariant.as<JsonObject>())
+        {
+            msg += "&";
+            msg += kv.key;
+            msg += "=";
+            msg += kv.value.as<String>();
+        }
+
+        msg += F(" HTTP/1.1\r\nHost: api.thingspeak.com: ");
+        msg += F("\r\nConnection: close\r\nContent-Type: application/json\r\nContent-Length: ");
+        msg += _jsonVariant.measureLength();
+        msg += "\r\n";
+
+        _client.println(msg);
+        CONSOLELN(msg);
+
+        _jsonVariant.printTo(_client);
+        _client.println();
+        CONSOLELN(msg);
+    }
+    else
+    {
+        CONSOLELN(F("\nERROR Sender: couldnt connect"));
+    }
+
+    int timeout = 0;
+    while (!_client.available() && timeout < CONNTIMEOUT)
+    {
+        timeout++;
+        delay(1);
+    }
+    while (_client.available())
+    {
+        char c = _client.read();
+        Serial.write(c);
+    }
+    // currentValue = 0;
+    _client.stop();
+    delay(100); // allow gracefull session close
+    return true;
+}
+
 bool SenderClass::sendInfluxDB(String server, uint16_t port, String db, String name)
 {
     HTTPClient http;
@@ -152,7 +209,7 @@ bool SenderClass::sendInfluxDB(String server, uint16_t port, String db, String n
 bool SenderClass::sendPrometheus(String server, uint16_t port, String job, String instance)
 {
     HTTPClient http;
-    
+
     // the path looks like /metrics/job/<JOBNAME>[/instance/<INSTANCENAME>]
     String uri = "/metrics/job/";
     uri += job;

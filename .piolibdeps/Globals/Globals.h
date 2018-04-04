@@ -15,7 +15,7 @@
 #include <OLEDFont_Dialog.h>
 
 // defines go here
-#define FIRMWAREVERSION "1.1.4"
+#define FIRMWAREVERSION "1.1.5"
 #define USERAGENT "ESP8266"
 #define OLED32
 //#define OLED64
@@ -31,6 +31,7 @@
 
 #define API_FHEM true
 #define API_UBIDOTS true
+#define API_THINGSPEAK true
 #define API_GENERIC true
 #define API_TCONTROL true
 #define API_INFLUXDB true
@@ -64,13 +65,6 @@
 
 #define CFGFILE "/config.json"
 #define TKIDSIZE 40
-/*#define ADCDIVISOR 191.8
-#define ONE_WIRE_BUS D6 // DS18B20 on ESP pin12
-#define RESOLUTION 12   // 12bit resolution == 750ms update rate
-#define OWinterval (800 / (1 << (12 - RESOLUTION)))
-#define MEDIANROUNDS 7
-#define ACCINTERVAL 200
-#define MEDIANAVRG 3*/
 
 #define CBP_ENDPOINT "/api/hydrometer/v1/data"
 
@@ -89,20 +83,6 @@
 #define TEMP_FAHRENHEIT 1
 #define TEMP_KELVIN 2
 
-/*#define WIFIENADDR 1
-#define RTCVALIDFLAG 0xCAFEBABE
-
-// sleep management
-#define RTCSLEEPADDR 5
-#define MAXSLEEPTIME 3600UL //TODO
-#define EMERGENCYSLEEP (my_sleeptime * 3 < MAXSLEEPTIME ? MAXSLEEPTIME : my_sleeptime * 3)
-#define LOWBATT 3.3*/
-
-//#define UNINIT 0
-
-//extern int16_t ax, ay, az;
-//extern int16_t my_aX, my_aY, my_aZ;
-//extern float Volt, Temperatur, Tilt, Gravity;
 extern float HUMIDITY, TEMPERATURE;
 
 extern bool saveConfig();

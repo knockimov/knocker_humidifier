@@ -394,6 +394,16 @@ bool uploadData(uint8_t service)
   }
 #endif
 
+#ifdef API_THINGSPEAK
+  if (service == DTThingspeak)
+  {
+    sender.add("field2", HUMIDITY);
+    sender.add("field1", scaleTemperature(TEMPERATURE));
+    CONSOLELN(F("\ncalling Thingspeak"));
+    return sender.sendThingspeak(my_token);
+  }
+#endif
+
 #ifdef API_INFLUXDB
   if (service == DTInfluxDB)
   {
